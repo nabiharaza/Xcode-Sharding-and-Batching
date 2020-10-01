@@ -1,7 +1,8 @@
 def input(N):
     left_matrix = [["(" + str(j) + "," + str(i) + ")" for i in range(N)] for j in range(N)]
     right_matrix = left_matrix
-    print(left_matrix)
+    print("Input:\n",left_matrix)
+    print("--------------------------------------------------------------------------------------------------------\n")
     return left_matrix, right_matrix
 
 
@@ -11,12 +12,14 @@ def mapping(left_matrix, right_matrix):
 
     ## right matrix to be done
     mapped_right_matrix = right_mapping(right_matrix)
+
     ## parity to be calculated - make a dictonary , key = row (n-2) and value is XOR
 
     return mapped_left_matrix
 
 
 def left_mapping(left_matrix):
+    print("Left Mapping")
     col = 0
     mapping_list = []
     n = len(left_matrix)
@@ -29,7 +32,9 @@ def left_mapping(left_matrix):
         # print("first pass seq: ", row_sequence)
         row_sequence = left_matrix_second_pass(row_sequence, right_part_row, right_part_col, n)
         # print("second pass seq: ", row_sequence)
+        print("Left matrix mapping seq: ", row_sequence)
         mapping_list.append(row_sequence)
+    print("--------------------------------------------------------------------------------------------------------\n")
     return mapping_list
 
 
@@ -77,6 +82,7 @@ def right_matrix_second_pass(row_sequence, row, col, n):
 
 
 def right_mapping(right_matrix):
+    print("Right Mapping")
     col = 0
     mapping_list = []
     n = len(right_matrix)
@@ -88,45 +94,70 @@ def right_mapping(right_matrix):
             row_sequence = right_matrix_first_pass(row_sequence, row, n)
         # print("first pass seq: ", row_sequence)
         row_sequence = right_matrix_second_pass(row_sequence, right_part_row, right_part_col, n)
-        print("second pass seq: ", row_sequence)
+        # print("second pass seq: ", row_sequence)
+        print("Right matrix mapping seq: ", row_sequence)
         mapping_list.append(row_sequence)
+    print("--------------------------------------------------------------------------------------------------------\n")
     return mapping_list
 
 
-def rotate(mapped_left_matrix):
-    rotate_left_matrix(mapped_left_matrix)
+def rotate(left_matrix, right_matrix):
+    rotate_left_matrix(left_matrix)
     rotate_right_matrix(right_matrix)
 
 
 def rotate_left_matrix(left_matrix):
-    # make coloumn vector
+    print("Rotate Left Matrix")
     whole_column_matrix = []
+
     for col in range(len(left_matrix)):
+        # create column vectors
         col_sequence = [item[col] for item in left_matrix]
-        # print("Col Seq :", col_sequence)
 
-        # now implemeting lgoic to rotate col vector by i = (n-1) - c
-
+        # Rotate every column vector by i = (n-1) - c
         i = len(left_matrix) - 1 - col
         col_sequence = col_sequence[i:] + col_sequence[:i]
-        # print("rotated col seq :", col_sequence)
-        # print("\n--------------------------")
         whole_column_matrix.append(col_sequence)
 
     final_left_rotated_matrix = []
-    # Join back columns ro make matrix again
+
+    # merge columns to produce matrix
     for row in range(len(whole_column_matrix)):
         row_sequence = [item[row] for item in whole_column_matrix]
-        # print(row_sequence)
         final_left_rotated_matrix.append(row_sequence)
+        print(row_sequence)
+    print("--------------------------------------------------------------------------------------------------------\n")
     return final_left_rotated_matrix
 
 
 def rotate_right_matrix(right_matrix):
-    pass
+    print("Right Rotate Matrix")
+    whole_column_matrix = []
+    for col in range(len(right_matrix)):
+        # create column vectors
+        col_sequence = [item[col] for item in right_matrix]
+
+        # swap nth element with n-1th element
+        swap = col_sequence[len(right_matrix) - 1]
+        col_sequence[len(right_matrix) - 1] = col_sequence[len(right_matrix) - 2]
+        col_sequence[len(right_matrix) - 2] = swap
+
+        # Rotate every column vector by i
+        i = col
+        col_sequence = col_sequence[i:] + col_sequence[:i]
+        whole_column_matrix.append(col_sequence)
+
+    final_right_rotated_matrix = []
+    # merge columns to produce matrix
+    for row in range(len(whole_column_matrix)):
+        row_sequence = [item[row] for item in whole_column_matrix]
+        final_right_rotated_matrix.append(row_sequence)
+        print(row_sequence)
+    print("--------------------------------------------------------------------------------------------------------\n")
+    return final_right_rotated_matrix
 
 
 if __name__ == '__main__':
     left_matrix, right_matrix = input(5)
     mapped_left_matrix = mapping(left_matrix, right_matrix)
-    rotated_matrix = rotate(left_matrix)
+    rotated_matrix = rotate(left_matrix, right_matrix)
