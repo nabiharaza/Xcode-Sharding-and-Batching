@@ -156,6 +156,12 @@ def rotate_right_matrix(right_matrix):
     print("--------------------------------------------------------------------------------------------------------\n")
     return final_right_rotated_matrix
 
+def recovery(cols):
+    pass
+
+def getFailedNodes(cols):
+    pass
+
 
 if __name__ == '__main__':
     left_matrix, right_matrix = input(5)
