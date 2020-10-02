@@ -1,7 +1,7 @@
 def input(N):
     left_matrix = [["(" + str(j) + "," + str(i) + ")" for i in range(N)] for j in range(N)]
     right_matrix = left_matrix
-    print("Input:\n",left_matrix)
+    print("Input:\n", left_matrix)
     print("--------------------------------------------------------------------------------------------------------\n")
     return left_matrix, right_matrix
 
@@ -10,7 +10,6 @@ def mapping(left_matrix, right_matrix):
     mapped_left_matrix = left_mapping(left_matrix)
     # print("Final Left Matrix Mapped: ", mapped_left_matrix)
 
-    ## right matrix to be done
     mapped_right_matrix = right_mapping(right_matrix)
 
     ## parity to be calculated - make a dictonary , key = row (n-2) and value is XOR
@@ -102,8 +101,7 @@ def right_mapping(right_matrix):
 
 
 def rotate(left_matrix, right_matrix):
-    rotate_left_matrix(left_matrix)
-    rotate_right_matrix(right_matrix)
+    return rotate_left_matrix(left_matrix), rotate_right_matrix(right_matrix)
 
 
 def rotate_left_matrix(left_matrix):
@@ -156,14 +154,37 @@ def rotate_right_matrix(right_matrix):
     print("--------------------------------------------------------------------------------------------------------\n")
     return final_right_rotated_matrix
 
-def recovery(cols):
+
+def recovery_process(failed_vectors):
     pass
 
-def getFailedNodes(cols):
-    pass
+
+def get_failed_nodes(failed_vectors, left_rotated_matrix, right_rotated_matrix):
+    failed_nodes_in_vectors = []
+    # create column vectors to fail the vectors
+    for col in range(len(left_rotated_matrix)):
+        left_col_sequence = [item[col] for item in left_matrix]
+
+    for col in range(len(right_rotated_matrix)):
+        right_col_sequence = [item[col] for item in left_matrix]
+
+    # adding failed notes of left matrix
+    for col in failed_vectors:
+        for row in range(len(left_rotated_matrix)):
+            failed_nodes_in_vectors.append(left_rotated_matrix[row][col])
+
+    # adding failed notes of right matrix
+    for col in failed_vectors:
+        for row in range(len(right_rotated_matrix)):
+            failed_nodes_in_vectors.append(right_rotated_matrix[row][col])
+    print(failed_nodes_in_vectors)
 
 
 if __name__ == '__main__':
     left_matrix, right_matrix = input(5)
     mapped_left_matrix = mapping(left_matrix, right_matrix)
-    rotated_matrix = rotate(left_matrix, right_matrix)
+    left_rotated_matrix, right_rotated_matrix = rotate(left_matrix, right_matrix)
+
+    failed_vectors = [1, 3]
+    get_failed_nodes(failed_vectors, left_rotated_matrix, right_rotated_matrix)
+    recovery_process(failed_vectors)
