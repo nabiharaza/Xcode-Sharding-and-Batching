@@ -13,7 +13,6 @@ def mapping(left_matrix, right_matrix):
     mapped_right_matrix = right_mapping(right_matrix)
 
     ## parity to be calculated - make a dictonary , key = row (n-2) and value is XOR
-
     return mapped_left_matrix
 
 
@@ -155,12 +154,14 @@ def rotate_right_matrix(right_matrix):
     return final_right_rotated_matrix
 
 
-def recovery_process(failed_vectors):
-    pass
+def recovery_process(failed_vectors, failed_nodes, left_rotated_matrix, right_rotated_matrix):
+    diagonals = []
 
 
 def get_failed_nodes(failed_vectors, left_rotated_matrix, right_rotated_matrix):
-    failed_nodes_in_vectors = []
+    left_failed_nodes = set()
+    right_failed_nodes = set()
+
     # create column vectors to fail the vectors
     for col in range(len(left_rotated_matrix)):
         left_col_sequence = [item[col] for item in left_matrix]
@@ -171,13 +172,18 @@ def get_failed_nodes(failed_vectors, left_rotated_matrix, right_rotated_matrix):
     # adding failed notes of left matrix
     for col in failed_vectors:
         for row in range(len(left_rotated_matrix)):
-            failed_nodes_in_vectors.append(left_rotated_matrix[row][col])
+            # leaving out the primary diagonals to be added in failed nodes
+            if row != col:
+                left_failed_nodes.add(tuple((row, col)))
 
     # adding failed notes of right matrix
     for col in failed_vectors:
         for row in range(len(right_rotated_matrix)):
-            failed_nodes_in_vectors.append(right_rotated_matrix[row][col])
-    print(failed_nodes_in_vectors)
+            # leaving out the secondary diagonals to be added in failed nodes
+            if ((row + col) != (len(right_rotated_matrix) - 1)):
+                right_failed_nodes.add(tuple((row, col)))
+    print("Left failed Nodes: ", left_failed_nodes, "and right failed nodes: ", right_failed_nodes)
+    return left_failed_nodes
 
 
 if __name__ == '__main__':
@@ -186,5 +192,5 @@ if __name__ == '__main__':
     left_rotated_matrix, right_rotated_matrix = rotate(left_matrix, right_matrix)
 
     failed_vectors = [1, 3]
-    get_failed_nodes(failed_vectors, left_rotated_matrix, right_rotated_matrix)
-    recovery_process(failed_vectors)
+    failed_nodes = get_failed_nodes(failed_vectors, left_rotated_matrix, right_rotated_matrix)
+    recovery_process(failed_vectors, failed_nodes, left_rotated_matrix, right_rotated_matrix)
