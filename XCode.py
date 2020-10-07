@@ -26,7 +26,7 @@ def mapping(left_matrix, right_matrix):
 
 
 def left_mapping(left_matrix):
-    print("Left Mapping")
+    # print("Left Mapping")
     col = 0
     mapping_list = []
     n = len(left_matrix)
@@ -82,7 +82,6 @@ def right_matrix_second_pass(row_sequence, row, col, n):
         elif parityFlag == True and row == n - 2:
             row -= 1
         row_sequence.append([row, col])
-
         row -= 1
         col -= 1
     return row_sequence
@@ -111,14 +110,12 @@ def right_mapping(right_matrix):
 def rotate(left_matrix, right_matrix):
     final_left_rotated_matrix, map_left_rotated_to_original = rotate_left_matrix(left_matrix)
     final_right_rotated_matrix, map_right_rotated_to_original = rotate_right_matrix(right_matrix)
-
     return final_left_rotated_matrix, map_left_rotated_to_original, final_right_rotated_matrix, map_right_rotated_to_original
 
 
 def rotate_left_matrix(left_matrix):
     # print("Rotate Left Matrix")
     whole_column_matrix = []
-
     tracker = []
     for col in range(len(left_matrix)):
         # create column vectors
@@ -132,7 +129,6 @@ def rotate_left_matrix(left_matrix):
         index_tracker = index_tracker[i:] + index_tracker[:i]
         # print("row rotated", index_tracker)
         tracker.append(index_tracker)
-
         whole_column_matrix.append(col_sequence)
 
     final_left_rotated_matrix = []
@@ -151,7 +147,8 @@ def rotate_left_matrix(left_matrix):
             row_sequence.append([tracker[item][row], itr])
             itr += 1
         map_left_rotated_to_original.append(row_sequence)
-        # print(map_left_rotated_to_original[row])
+        # print("DFDFDDF" , map_left_rotated_to_original[row])
+
     return final_left_rotated_matrix, map_left_rotated_to_original
 
 
@@ -194,10 +191,10 @@ def rotate_right_matrix(right_matrix):
     for row in range(len(whole_column_matrix)):
         row_sequence = [item[row] for item in whole_column_matrix]
         final_right_rotated_matrix.append(row_sequence)
-        print(row_sequence)
+        # print(row_sequence)
 
     map_right_rotated_to_original, itr = [], 0
-    print("\nRight Mapped Matrix")
+    # print("\nRight Mapped Matrix")
     for row in range(len(tracker)):
         row_sequence = []
         itr = 0
@@ -222,6 +219,7 @@ def recovery_process(failed_vectors, left_failed_nodes, right_failed_nodes,
     # mark the diagonals by 0
     while index < len(final_left_rotated_matrix):
         duplicate_rotated_left[index][index] = 'D,D'
+        duplicate_rotated_right[index][len(duplicate_rotated_right) - 1 - index] = 'D,D'
         index = index + 1
     # mark the failed vectors by -1
 
@@ -232,40 +230,148 @@ def recovery_process(failed_vectors, left_failed_nodes, right_failed_nodes,
                 duplicate_rotated_left[row][column_vector] = '-1,-1'
             else:
                 duplicate_rotated_left[row][column_vector] = 'D,D'
-    print("DL:,", duplicate_rotated_left)
+    print("Duplicate Left Matrix:,", duplicate_rotated_left)
 
     for column_vector in failed_vectors:
         for row in range(len(final_right_rotated_matrix)):
-            # print(row)
             # leaving out the primary diagonals to be added in failed nodes
-            if (row + column_vector) != (len(right_matrix) - 1):
+            if (row + column_vector) != (len(final_right_rotated_matrix) - 1):
                 duplicate_rotated_right[row][column_vector] = '-1,-1'
             else:
                 duplicate_rotated_right[row][column_vector] = 'D,D'
-        print("duplicate ", duplicate_rotated_right[column_vector])
+    print("Duplicate Right Matrix ", duplicate_rotated_right)
 
-    step_one_recovery(duplicate_rotated_left, duplicate_rotated_right, map_right_rotated_to_original,
-                      map_left_rotated_to_original, failed_vectors, right_failed_nodes, left_failed_nodes)
+    step_one_recovery_left(duplicate_rotated_left, duplicate_rotated_right, map_right_rotated_to_original,
+                           map_left_rotated_to_original, failed_vectors, right_failed_nodes, left_failed_nodes)
 
 
-def step_one_recovery(duplicate_rotated_left, duplicate_rotated_right, map_right_rotated_to_original,
-                      map_left_rotated_to_original, failed_vectors, right_failed_nodes, left_failed_nodes):
-    for row in range(len(duplicate_rotated_left)):
-        broken_count = 0
-        diagonal_count = 0
-        for column in range(len(duplicate_rotated_left)):
+def get_original_coordinates(row, column, mapper):
+    # give the coordinates to the -1-1 to return the data of that value
+    return mapper[row][column]
 
-            if column in failed_vectors:
-                if duplicate_rotated_left[row][column] == 'D,D':
-                    diagonal_count += 1
-                if duplicate_rotated_left[row][column] == '-1,-1':
-                    broken_count += 1
-                if broken_count > 1:
-                    print('skipping row', row, column)
-                    continue
-                if broken_count == 1 and diagonal_count == 1:
-                    duplicate_rotated_left[row][column] = 'R,R'
-    print(duplicate_rotated_left)
+
+def get_rotated_coordinates(coordinates, mapper):
+    # find the "data" value in the right matrix to return the actual coordinates.
+    for row in range(len(mapper)):
+        for col in range(len(mapper)):
+            if mapper[row][col] == coordinates:
+                return [row, col]
+
+
+def step_one_recovery_left(duplicate_rotated_left, duplicate_rotated_right, map_right_rotated_to_original,
+                           map_left_rotated_to_original, failed_vectors, right_failed_nodes, left_failed_nodes):
+    print("Original Left failed nodes: ", left_failed_nodes)
+    print("Original Right failed nodes : ", right_failed_nodes)
+    i = 0
+    while i <= 2:
+        print("==================LEFT MATRIX =================================")
+        if len(left_failed_nodes) != 0:
+            for row in range(len(duplicate_rotated_left)):
+                broken_count = 0
+                diagonal_count = 0
+                recovered_count = 0
+                temp_row = 0
+                temp_col = 0
+                for column in range(len(duplicate_rotated_left)):
+                    if column in failed_vectors:
+                        if duplicate_rotated_left[row][column] == 'D,D':
+                            diagonal_count += 1
+                        if duplicate_rotated_left[row][column] == '-1,-1':
+                            temp_row = row
+                            temp_col = column
+                            broken_count += 1
+                        if duplicate_rotated_left[row][column] == 'R,R':
+                            recovered_count += 1
+                        if broken_count > 1:
+                            print("skipping row")
+                            # continue
+                        if (broken_count == 1 and diagonal_count == 1) or (broken_count == 1 and recovered_count == 1):
+                            duplicate_rotated_left[temp_row][temp_col] = 'R,R'
+                            # find the matrix in the right coloum
+                            print("-1, -1 Values are :", temp_row, ",", temp_col)
+                            coordinates = get_original_coordinates(temp_row, temp_col, map_left_rotated_to_original)
+                            print("## Cordinates of **popped out: ", temp_row, temp_col, "and data there is: ",
+                                  coordinates)
+                            rotated_coordinates = get_rotated_coordinates(coordinates, map_right_rotated_to_original)
+                            print("## Rotated Cordinates of", coordinates, "is at *popped out* : ", rotated_coordinates)
+
+                            # mark rotated_coordinates as R,R of the right matrix
+                            duplicate_rotated_right[rotated_coordinates[0]][rotated_coordinates[1]] = 'R,R'
+                            # popping the recovered nodes
+                            if [temp_row, temp_col] in left_failed_nodes:
+                                print("Failed Left Node Found... Popping out ", [temp_row, temp_col])
+                                left_failed_nodes.remove([temp_row, temp_col])
+
+                            if rotated_coordinates in right_failed_nodes:
+                                print("Failed Right Node Found... Popping out ", rotated_coordinates)
+                                right_failed_nodes.remove(rotated_coordinates)
+
+                            print("\nRecovered Left Matrix ", duplicate_rotated_left)
+                            print("Recovered Right Matrix ", duplicate_rotated_right)
+                            print("Popped Left", left_failed_nodes)
+                            print("Popped Right", right_failed_nodes)
+
+                            print("---------------")
+
+        print("==================RIGHT MATRIX =================================")
+        if len(right_failed_nodes) != 0:
+            print("Starting Recovery from the Right Matrix")
+            for row in range(len(duplicate_rotated_right)):
+                broken_count = 0
+                diagonal_count = 0
+                recovered_count = 0
+                temp_row = 0
+                temp_col = 0
+                for column in range(len(duplicate_rotated_right)):
+                    if column in failed_vectors:
+                        if duplicate_rotated_right[row][column] == 'D,D':
+                            diagonal_count += 1
+                        if duplicate_rotated_right[row][column] == '-1,-1':
+                            temp_row = row
+                            temp_col = column
+                            broken_count += 1
+                        if duplicate_rotated_left[row][column] == 'R,R':
+                            recovered_count += 1
+                        if broken_count > 1:
+                            print("skipping row")
+                            # continue
+                        if (broken_count == 1 and diagonal_count == 1) or (broken_count == 1 and recovered_count == 1):
+                            print("in here")
+                            duplicate_rotated_right[temp_row][temp_col] = 'R,R'
+                            # find the matrix in the right coloum
+
+                            print("-1, -1 Values are :", temp_row, ",", temp_col)
+                            coordinates = get_original_coordinates(temp_row, temp_col, map_right_rotated_to_original)
+                            print("## Cordinates of **popped out: ", temp_row, temp_col, "and data there is: ",
+                                  coordinates)
+                            rotated_coordinates = get_rotated_coordinates(coordinates, map_left_rotated_to_original)
+                            print("## Rotated Cordinates of", coordinates, "is at *popped out* : ", rotated_coordinates)
+
+                            # mark rotated_coordinates as R,R of the right matrix
+                            duplicate_rotated_left[rotated_coordinates[0]][rotated_coordinates[1]] = 'R,R'
+                            # popping the recovered nodes
+                            if [temp_row, temp_col] in right_failed_nodes:
+                                print("Failed Right Node Found and Now Recovered... Popping out ", [temp_row, temp_col])
+                                right_failed_nodes.remove([temp_row, temp_col])
+
+                            if rotated_coordinates in left_failed_nodes:
+                                print("Failed Left Node Found and Now Recovered... Popping out ", rotated_coordinates)
+                                left_failed_nodes.remove(rotated_coordinates)
+
+                            print("\nRecovered Left Matrix ", duplicate_rotated_left)
+                            print("Recovered Right Matrix ", duplicate_rotated_right)
+                            print("Popped Left", left_failed_nodes)
+                            print("Popped Right", right_failed_nodes)
+
+                            print("---------------")
+        i = i + 1
+
+    print("+++++++++++++++FINALLLL++++++++++++++++++++++++++++")
+    print("\nRecovered Left Matrix ", duplicate_rotated_left)
+    print("Recovered Right Matrix ", duplicate_rotated_right)
+    print("Popped Left", left_failed_nodes)
+    print("Popped Right", right_failed_nodes)
+    print("+++++++++++++++FINALLLL++++++++++++++++++++++++++++")
 
 
 def get_failed_nodes(failed_vectors, final_left_rotated_matrix, final_right_rotated_matrix):
