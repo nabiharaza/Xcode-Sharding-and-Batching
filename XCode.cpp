@@ -190,16 +190,15 @@ Panther::XCode<T>::recoverFromOneColumnErasure(Panther::Encryptor &encryptor, st
     // part 1
     util::debug("Recovering part 1 with one column erasure...\n\n");
     for (int r = 0; r < rows; ++r) {
-        std::cout << "Before loop: " << r << "," << colID << std::endl;;
         if (r != colID) { // skip one computation for the parity bit
-            std::cout << "Going in loop for: " << r << "," << colID << std::endl;;
             helib::Ctxt ctxt(*(encryptor.getPublicKey()));
             helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
             for (int c = 1; c < cols; ++c) {
+                std::cout << "----- For  row and Coloumn:  " << r << "," << c << "  ------" << std::endl << std::endl;
                 colIdx = mod(colID + c, cols);
-                std::cout << "ColID Before" << r << "," << colIdx << std::endl;
+                std::cout << "ColIdx Before Check if colIdx !=r : " << r << "," << colIdx << std::endl;
                 if (colIdx != r) {
-                    std::cout << "ColID After" << r << "," << colIdx << std::endl;
+                    std::cout << "ColIdx After" << r << "," << colIdx << std::endl;
                     std::cout << "row: " << r << " colIdx: " << colIdx << std::endl;
 //                   encryptor.decryptAndPrint("ctxt_before", ctxt);
 //                   encryptor.decryptAndPrint("shardctxt", *(shards[colIdx].getPart1Ctxt()));
@@ -294,285 +293,47 @@ Panther::XCode<T>::recoverFromTwoColumnErasure(Panther::Encryptor &encryptor, st
     int inCache = 0;
     int colIdx1 = 0;
     int colIdx2 = 0;
+    std::string brokenElementD1 = "";
+    std::string brokenElementD2 = "";
     bool flag = false;
 
-    for (int i = 0; i < n; i++) {
-        failedElements.push_back((std::to_string(i) + std::to_string(colID1)));
-        failedElements.push_back((std::to_string(i) + std::to_string(colID2)));
-    }
-    for (int i = 0; i < failedElements.size(); i++) {
-        std::cout << "Updated Failed Nodes: " << failedElements[i] << std::endl;
-    }
-
-    // part 1
-    util::debug("\n========== Recovering part 1 with TWO Column Erasure =========\n");
-//    while (!failedElements.empty()) {
-    int i = 0;
-    while (i < 4) {
-        std::cout << "----------------------  Entering next Iteration: " <<i<< std::endl;
-        for (int r = 0; r < rows; ++r) {
-//        if (r == colID1 || r == colID2) { // go only with the diognal parity ones
-            diagonalCount = 0;
-            failedPerRow = 0;
-            inCache = 0;
+    for (int r = 0; r < rows; ++r) {
+        label = this->part_1_labelTable->get(colID1, r);
+        label1 = this->part_1_labelTable->get(colID2, r);
+        if (!cache.contain(label) || !cache.contain(label)) { //check if it is not in the cache
             helib::Ctxt ctxt(*(encryptor.getPublicKey()));
             helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
-            std::string tempCoordinates = "0";
-            for (int c = 1; c < cols; ++c) {
-                tempCoordinates = (std::to_string(r) + std::to_string(c));
-                if (std::find(failedElements.begin(), failedElements.end(), tempCoordinates) != failedElements.end()) {
-                    colIdx1 = mod(colID1 + c, cols);
-                    colIdx2 = mod(colID2 + c, cols);
+            for (int c = 1; c < cols; ++c) { // now check each col for the same row
+                {
+                    std::cout << "-----For  row and column: " << r << "," << c << "------" << std::endl << std::endl;
+                    brokenElementD1 = std::to_string(r)+","+std::to_string(colID1);
+                    brokenElementD2 = std::to_string(r)+","+std::to_string(colID2);
 
-                    std::cout << "colIdx1 is:" << r << "," << colIdx1 << std::endl;
-                    std::cout << "colIdx2 is:" << r << "," << colIdx2 << std::endl;
-
-//                    label = this->part_1_labelTable->get(colID1, r);
-//                    if (cache.contain(label)) {
-//                        std::cout << "HURRAH!! " << label << " IS FOUND IN CACHE for coldID1: " << std::endl;
-//                        inCache++;
-//                        ctxt.addCtxt(*(shards[colID1].getPart1Ctxt()));
-//                        // if found, this means it has been computed in part 1
-////                        util::debug("reusing computed value.");
-//                        encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-//                        label = this->part_1_labelTable->get(colID1, r);
-//                        std::cout << "rotation " << r - cache.get(label)->getRowID() << std::endl;
-//                        encryptor.getEncryptedArray()->rotate(*(cache.get(label)->getCtxt()),
-//                                                              r - cache.get(label)->getRowID());
-//                        encryptor.decryptAndPrint("after rotation", *(cache.get(label)->getCtxt()));
-//                        recoveredShard_part1.addCtxt(*(cache.get(label)->getCtxt()));
-//                        std::cout << "exiting cache loop 1 left matrix" << std::endl;
-//                    }
-//
-//                    label = this->part_1_labelTable->get(colID2, r);
-//                    if (cache.contain(label)) {
-//                        std::cout << "HURRAH!! " << label << " IS FOUND IN CACHE for coldID2: " << std::endl;
-//                        inCache++;
-//                        ctxt.addCtxt(*(shards[colIdx2].getPart1Ctxt()));
-//                        // if found, this means it has been computed in part 1
-//                        util::debug("reusing computed value.");
-////                        encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-//                        label = this->part_1_labelTable->get(colID2, r);
-//                        std::cout << "rotation " << r - cache.get(label)->getRowID() << std::endl;
-//                        encryptor.getEncryptedArray()->rotate(*(cache.get(label)->getCtxt()),
-//                                                              r - cache.get(label)->getRowID());
-////                        encryptor.decryptAndPrint("after rotation", *(cache.get(label)->getCtxt()));
-//                        recoveredShard_part1.addCtxt(*(cache.get(label)->getCtxt()));
-//                        std::cout << "exiting cache loop 2 left matrix" << std::endl;
-//                    }
-                    if (r == c) {
-                        std::cout << "Diagonal broken element found: " << tempCoordinates << std::endl;
-                        diagonalCount++;}
-//                    } else if (std::find(failedElements.begin(), failedElements.end(), tempCoordinates) ==
-//                               failedElements.end()) {
-                    else{
-                        std::cout << "broken element found: " << tempCoordinates << std::endl;
-                        failedPerRow++;
-                    }
-                    std::cout << "FailedPerRow Count: " << failedPerRow << std::endl;
-                    std::cout << "Diagonal Count: " << diagonalCount << std::endl;
-                    std::cout << "Cache Count: " << inCache << std::endl << std::endl;
-                }
-            }
-            if (failedPerRow > 1 && diagonalCount == 0) {
-                std::cout << "Skipping this row - More than one element is faulty and not diagonal" << std::endl;;
-                continue;
-            } else {
-                flag = true;
-                std::cout << "----FailedPerRow Count----: " << failedPerRow << std::endl;
-                std::cout << "----Diagonal Count-------: " << diagonalCount << std::endl << std::endl;
-                std::cout << "colIDx1:   " << colIdx1 << std::endl;
-                std::cout << "ColID1 Before" << r << "," << colIdx1 << std::endl;
-                std::cout << "ColID2 Before" << r << "," << colIdx2 << std::endl;
-                if (colIdx1 != r && colIdx2 != r) {
-                    std::cout << "ColID1 After: " << r << "," << colIdx1 << std::endl;
-                    std::cout << "ColID2 After" << r << "," << colIdx2 << std::endl;
-//                    encryptor.decryptAndPrint("ctxt_before", ctxt);
-//                    encryptor.decryptAndPrint("shardctxt", *(shards[colIdx1].getPart1Ctxt()));
-                    ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
-                    ctxt.addCtxt(*(shards[colIdx2].getPart1Ctxt()));
-
-//                    encryptor.decryptAndPrint("ctxt_after", ctxt);
-                }
-            }
-            if (flag == true) {
-                std::cout << "########### APPLYING BIT MASK NOW ON : #############" << std::endl;
-                std::cout << r << "," << colIdx1 << std::endl;
-                bitmask[r] = 1;
-//                std::cout << "bitmask: " << bitmask << std::endl;
-                ctxt.multByConstant(bitmask);
-//                encryptor.decryptAndPrint("ctxt_after_bitmask", ctxt);
-                recoveredShard_part1.addCtxt(ctxt);
-//                encryptor.decryptAndPrint("recoveredShard_part1_adding", recoveredShard_part1);
-                std::cout << "In Rotated Matrix: " << r << "," << colID1 << std::endl;
-                if (r != colID1) {
-                    std::cout << "Actual Matrix (label) for colID1: " << label << std::endl;
-                    label = this->part_1_labelTable->get(colID1, r);
-                    std::cout << "Actual Matrix (label): " << label << std::endl;
-                    cache.add(label, new Panther::CacheEntry(r, colID1, new helib::Ctxt(ctxt)));
-                    std::string tempCoord = std::to_string(r) + std::to_string(colID1);
-                    std::cout << "ALERT!!!! REMOVING: " << tempCoord << std::endl;
-                    failedElements.erase(std::remove(failedElements.begin(), failedElements.end(), tempCoord),
-                                         failedElements.end());
-
-                    for (int i = 0; i < failedElements.size(); i++) {
-                        std::cout << "Updated Failed Nodes: " << failedElements[i] << std::endl;
-                    }
-                }
-                if (r != colID2) {
-                    std::cout << "Actual Matrix (label) for colID2: " << label << std::endl;
-                    label = this->part_1_labelTable->get(colID2, r);
-                    cache.add(label, new Panther::CacheEntry(r, colID2, new helib::Ctxt(ctxt)));
-                    std::string tempCoord = std::to_string(r) + std::to_string(colID2);
-                    std::cout << "ALERT!!!! REMOVING: " << tempCoord << std::endl;
-                    failedElements.erase(std::remove(failedElements.begin(), failedElements.end(), tempCoord),
-                                         failedElements.end());
-
-                    for (int i = 0; i < failedElements.size(); i++) {
-                        std::cout << "Updated Failed Nodes: " << failedElements[i] << std::endl;
-                    }
-                }
-                cache.print();
-            }
-
-            //} end if loop for parity was here
-
-        }
-        // part 2
-        util::debug("### --- RECOVERING RIGHT MATRIX ##### -----");
-        for (int r = 0; r < rows; ++r) {
-//        if (r == rows - colID1 - 1 || (r == rows - colID2 - 1)) { // go only with the diagonal parity ones
-            diagonalCount = 0;
-            failedPerRow = 0;
-            label = this->part_2_labelTable->get(colID1, r);
-            label1 = this->part_2_labelTable->get(colID2, r);
-//            std::cout << "label: " << label << std::endl;
-            if (!cache.contain(label) || !cache.contain(label1)) {
-                util::debug("computed value doesn't exist, compute it now.");
-                helib::Ctxt ctxt(*(encryptor.getPublicKey()));
-                helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
-                std::string tempCoordinates = "0";
-                for (int c = 1; c < cols; ++c) {
-                    tempCoordinates = (std::to_string(r) + std::to_string(c));
-                    if (std::find(failedElements.begin(), failedElements.end(), tempCoordinates) !=
-                        failedElements.end()) {
+                    if (r == colID1 || r == colID2) // checking if one of the faulty one is parity
+                    {
                         colIdx1 = mod(colID1 + c, cols);
-                        colIdx2 = mod(colID2 + c, cols);
-//                        if (cache.contain((std::to_string(r) + std::to_string(c)))) {
-//                            std::cout << "HURRAH!! " << tempCoordinates << " IS FOUND IN CACHE: " << std::endl;
-//                            inCache++;
-//                            // if found, this means it has been computed in part 1
-//                            util::debug("reusing computed value.");
-////                          encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-//                            std::cout << "NEEED CHNAGED. ADDED ONLY COL 2" << std::endl;
-//                            label = this->part_1_labelTable->get(colID2, r);
-//                            std::cout << "rotation " << r - cache.get(label)->getRowID() << std::endl;
-//                            //                  encryptor.getEncryptedArray()->rotate(*(cache.get(label)->getCtxt()), r - cache.get(label)->getRowID());
-//                            //                  encryptor.decryptAndPrint("after rotation", *(cache.get(label)->getCtxt()));
-//                            recoveredShard_part2.addCtxt(*(cache.get(label)->getCtxt()));
-//
-//                        }
-                        if (rows - c - 1 == r) {
-                            std::cout << "Diagonal broken element found: " << tempCoordinates << std::endl;
-                            diagonalCount++;
-                        } else {
-                            std::cout << "broken element found: " << tempCoordinates << std::endl;
-                            failedPerRow++;
+                        std::cout<<"colIdx1: "<<colIdx1<<std::endl;
+                        if (r != colIdx1 && colIdx1!=colID1 && colIdx1!=colID2 ){     // skipping the parity and adding the good ones in ctxt
+                            std::cout << "-----Starting Inserting for " << r << "," << c << "------" << std::endl;
+                            std::cout << "Inserted: " << r << "," << colIdx1 << "" << std::endl << std::endl;
+//                            encryptor.decryptAndPrint("ctxt_before", ctxt);
+//                            encryptor.decryptAndPrint("shardctxt", *(shards[colIdx1].getPart1Ctxt()));
+                            ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
+//                            encryptor.decryptAndPrint("ctxt_after", ctxt);
                         }
                     }
+
                 }
-                if (failedPerRow > 1 && diagonalCount == 0) {
-                    std::cout << "Skipping this row: " << r << std::endl;;
-                    continue;
-                } else {
-                    flag = true;
-                    std::cout << "\n\n----FailedPerRow Count----: " << failedPerRow << std::endl;
-                    std::cout << "----Diagonal Count-------: " << diagonalCount << std::endl << std::endl;
-                    std::cout << "ColID1 Before" << r << "," << colIdx1 << std::endl;
-                    std::cout << "ColID2 Before" << r << "," << colIdx2 << std::endl;
-                    if (colIdx1 != (rows - r - 1) || colIdx2 != (rows - r - 1)) {
-                        std::cout << "ColID1 After: " << r << "," << colIdx1 << std::endl;
-                        std::cout << "ColID2 After" << r << "," << colIdx2 << std::endl;
-//                  encryptor.decryptAndPrint("ctxt_before", ctxt);
-//                  encryptor.decryptAndPrint("shardctxt", *(shards[colIdx1].getPart1Ctxt()));
-                        ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
-                        ctxt.addCtxt(*(shards[colIdx2].getPart1Ctxt()));
-//                  encryptor.decryptAndPrint("ctxt_after", ctxt);
-                        bitmask[r] = 1;
-                        ctxt.multByConstant(bitmask);
-                        recoveredShard_part2.addCtxt(ctxt);
-//                        encryptor.decryptAndPrint("recoveredShard_part2_adding", recoveredShard_part2);
-                        std::cout << "In Rotated Matrix: " << r << "," << colID1 << std::endl;
-                        std::cout << "In Rotated Matrix: " << r << "," << colID2 << std::endl;
-                        if (r != rows - 1 - colID1) {
-                            label = this->part_2_labelTable->get(colID1, r);
-                            std::cout << "Actual Matrix (label) for colID1: " << label << std::endl;
-                            cache.add(label, new Panther::CacheEntry(r, colID1, new helib::Ctxt(ctxt)));
-                            std::string tempCoord = std::to_string(r) + std::to_string(colID1);
-                            std::cout << "ALERT!!!! REMOVING: " << tempCoord << std::endl;
-                            failedElements.erase(std::remove(failedElements.begin(), failedElements.end(), tempCoord),
-                                                 failedElements.end());
-
-                            for (int i = 0; i < failedElements.size(); i++) {
-                                std::cout << "Updated Failed Nodes: " << failedElements[i] << std::endl;
-                            }
-
-                        }
-                        if (r != rows - 1 - colID2) {
-                            label = this->part_2_labelTable->get(colID2, r);
-                            std::cout << "Actual Matrix (label) for colID2: " << label << std::endl;
-                            cache.add(label, new Panther::CacheEntry(r, colID2, new helib::Ctxt(ctxt)));
-                            std::string tempCoord = std::to_string(r) + std::to_string(colID2);
-                            std::cout << "ALERT!!!! REMOVING: " << tempCoord << std::endl;
-                            failedElements.erase(std::remove(failedElements.begin(), failedElements.end(), tempCoord),
-                                                 failedElements.end());
-
-                            for (int i = 0; i < failedElements.size(); i++) {
-                                std::cout << "Updated Failed Nodes: " << failedElements[i] << std::endl;
-                            }
-                        }
-                    }
-                    cache.print();
-                }
-            }
-//            } parity end wala brace
-
-            else { // if found, this means it has been computed in part 1
-                util::debug("reusing computed value.");
-//               encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-                std::cout << "rotation " << r - cache.get(label)->getRowID() << std::endl;
-//                encryptor.getEncryptedArray()->rotate(*(cache.get(label)->getCtxt()), r - cache.get(label)->getRowID());
-//               encryptor.decryptAndPrint("after rotation", *(cache.get(label)->getCtxt()));
-                recoveredShard_part2.addCtxt(*(cache.get(label)->getCtxt()));
             }
         }
-        cache.print();
-        std::cout << " +++++++++++++++++++++++++++ REACHED THE END ++++++++++++++++++++++++++++++" << std::endl
-                  << std::endl;
-    i++;
-        std::cout << "----------------------  Entering next Iteration: " <<i<< std::endl;
+        else
+        {
+            //Caching goes here
+        }
+
+
     }
 
-    util::debug("populating missing values...");
-    label = this->part_1_labelTable->get(colID1, colID1);
-    std::cout << "label: " << label << std::endl;
-    encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-    std::cout << "rotation " << colID1 - cache.get(label)->getRowID() << std::endl;
-    encryptor.getEncryptedArray()->rotate(*(cache.get(label)->getCtxt()), colID1 - cache.get(label)->getRowID());
-    encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-    recoveredShard_part1.addCtxt(*(cache.get(label)->getCtxt()));
-
-    label = this->part_2_labelTable->get(colID1, rows - colID1 - 1);
-    std::cout << "label: " << label << std::endl;
-    encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-    std::cout << "rotation " << rows - colID1 - 1 - cache.get(label)->getRowID() << std::endl;
-    encryptor.getEncryptedArray()->rotate(*(cache.get(label)->getCtxt()),
-                                          rows - colID1 - 1 - cache.get(label)->getRowID());
-    encryptor.decryptAndPrint("before rotation", *(cache.get(label)->getCtxt()));
-    recoveredShard_part2.addCtxt(*(cache.get(label)->getCtxt()));
-
-    encryptor.decryptAndPrint("RecoveredShardPart1", recoveredShard_part1);
-    encryptor.decryptAndPrint("RecoveredShardPart2", recoveredShard_part2);
 }
 
 template
