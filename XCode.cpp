@@ -295,46 +295,139 @@ Panther::XCode<T>::recoverFromTwoColumnErasure(Panther::Encryptor &encryptor, st
     int colIdx2 = 0;
     std::string brokenElementD1 = "";
     std::string brokenElementD2 = "";
-    bool flag = false;
+    bool workingRowFlag = false;
 
     for (int r = 0; r < rows; ++r) {
+        workingRowFlag = false;
         label = this->part_1_labelTable->get(colID1, r);
         label1 = this->part_1_labelTable->get(colID2, r);
-        if (!cache.contain(label) || !cache.contain(label)) { //check if it is not in the cache
+        if (!cache.contain(label) || !cache.contain(label1)) { //check if it is not in the cache
             helib::Ctxt ctxt(*(encryptor.getPublicKey()));
             helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
             for (int c = 1; c < cols; ++c) { // now check each col for the same row
                 {
-                    std::cout << "-----For  row and column: " << r << "," << c << "------" << std::endl << std::endl;
-                    brokenElementD1 = std::to_string(r)+","+std::to_string(colID1);
-                    brokenElementD2 = std::to_string(r)+","+std::to_string(colID2);
-
+                    std::cout << "\n\n-----Part 1: For  row and column: " << r << "," << c << "------" << std::endl;
                     if (r == colID1 || r == colID2) // checking if one of the faulty one is parity
                     {
                         colIdx1 = mod(colID1 + c, cols);
-                        std::cout<<"colIdx1: "<<colIdx1<<std::endl;
-                        if (r != colIdx1 && colIdx1!=colID1 && colIdx1!=colID2 ){     // skipping the parity and adding the good ones in ctxt
-                            std::cout << "-----Starting Inserting for " << r << "," << c << "------" << std::endl;
+//                        std::cout << "colIdx1: " << colIdx1 << std::endl;
+                        if (r != colIdx1 && colIdx1 != colID1 &&
+                            colIdx1 != colID2) {     // skipping the parity and adding the good ones in ctxt
+//                            std::cout << "-----Starting Inserting for " << r << "," << c << "------" << std::endl;
                             std::cout << "Inserted: " << r << "," << colIdx1 << "" << std::endl << std::endl;
 //                            encryptor.decryptAndPrint("ctxt_before", ctxt);
 //                            encryptor.decryptAndPrint("shardctxt", *(shards[colIdx1].getPart1Ctxt()));
+                            workingRowFlag = true;
                             ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
 //                            encryptor.decryptAndPrint("ctxt_after", ctxt);
                         }
                     }
+                }
+                //adding all the good ones are done. Now apply bitmask and XOR!
+                //workingRowFlag so that masks are not added to other non working rows
+                if (workingRowFlag == true) {
+                    bitmask[r] = 1;
+                    std::cout << "bitmask: " << bitmask << std::endl;
+                    ctxt.multByConstant(bitmask);
+//                          encryptor.decryptAndPrint("ctxt_after_bitmask", ctxt);
+                    recoveredShard_part1.addCtxt(ctxt);
+//                            encryptor.decryptAndPrint("recoveredShard_part1_adding", recoveredShard_part1);
+                    if (r != colID1) {
+                        std::cout << "Recovering Part 1 Disk 1 " << std::endl;
+                        std::cout << "In Rotated Matrix: " << r << "," << colID1 << std::endl;
+                        label = this->part_1_labelTable->get(colID1, r);
+                        std::cout << "Actual Matrix (label): " << label << std::endl;
+                        cache.add(label, new Panther::CacheEntry(r, colID1, new helib::Ctxt(ctxt)));
+                        std::cout << "Label:  " << label << " is successfully added to cache and recovered."
+                                  << std::endl;
+                    }
+                    if (r != colID2) {
+                        std::cout << "Recovering Part 1 Disk 2 " << std::endl;
+                        std::cout << "In Rotated Matrix: " << r << "," << colID2 << std::endl;
+                        label = this->part_1_labelTable->get(colID2, r);
+                        std::cout << "Actual Matrix (label): " << label << std::endl;
+                        cache.add(label, new Panther::CacheEntry(r, colID2, new helib::Ctxt(ctxt)));
+                        std::cout << "Label:  " << label << " is successfully added to cache and recovered."
+                                  << std::endl;
+                    }
 
                 }
+
+
             }
-        }
-        else
-        {
+            cache.print();
+
+        } else {
             //Caching goes here
         }
 
 
     }
 
+    //part 2
+    std::cout << "\n\n Recovering Part 2.....\n" << std::endl;
+    for (int r = 0; r < rows; ++r) {
+        workingRowFlag = false;
+        label = this->part_1_labelTable->get(colID1, r);
+        label1 = this->part_1_labelTable->get(colID2, r);
+        if (!cache.contain(label) || !cache.contain(label1)) { //check if it is not in the cache
+            helib::Ctxt ctxt(*(encryptor.getPublicKey()));
+            helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
+            for (int c = 1; c < cols; ++c) { // now check each col for the same row
+                {
+                    std::cout << "\n\n-----Part 2: For  row and column: " << r << "," << c << "------" << std::endl;
+                    if (r == colID1 || r == colID2) // checking if one of the faulty one is parity
+                    {
+                        colIdx1 = mod(colID1 + c, cols);
+                        std::cout << "colIdx1: " << colIdx1 << std::endl;
+                        if (colIdx1 != rows - r - 1 && colIdx1 != colID1 &&
+                            colIdx1 != colID2) {     // skipping the parity and adding the good ones in ctxt
+                            std::cout << "-----Starting Inserting for " << r << "," << c << "------" << std::endl;
+                            std::cout << "Inserted: " << r << "," << colIdx1 << "" << std::endl << std::endl;
+//                            encryptor.decryptAndPrint("ctxt_before", ctxt);
+//                            encryptor.decryptAndPrint("shardctxt", *(shards[colIdx1].getPart1Ctxt()));
+                            workingRowFlag = true;
+                            ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
+//                            encryptor.decryptAndPrint("ctxt_after", ctxt);
+                        }
+                    }
+                }
+            }
+            //adding all the good ones are done. Now apply bitmask and XOR!
+            //workingRowFlag so that masks are not added to other non working rows
+            if (workingRowFlag == true) {
+                bitmask[r] = 1;
+                std::cout << "bitmask: " << bitmask << std::endl;
+                ctxt.multByConstant(bitmask);
+//              encryptor.decryptAndPrint("ctxt_after_bitmask", ctxt);
+                recoveredShard_part2.addCtxt(ctxt);
+//              encryptor.decryptAndPrint("recoveredShard_part1_adding", recoveredShard_part1);
+                if (r != rows - 1 - colID1) {
+                    std::cout << "Recovering Part 2 Disk 1 " << std::endl;
+                    std::cout << "In Rotated Matrix: " << r << "," << colID1 << std::endl;
+                    label = this->part_2_labelTable->get(colID1, r);
+                    std::cout << "Actual Matrix (label): " << label << std::endl;
+                    cache.add(label, new Panther::CacheEntry(r, colID1, new helib::Ctxt(ctxt)));
+                    std::cout << "Label:  " << label << " is successfully added to cache and recovered."
+                              << std::endl;
+                }
+                if (r != rows - 1 - colID2) {
+                    std::cout << "Recovering Part 2 Disk 2 " << std::endl;
+                    std::cout << "In Rotated Matrix: " << r << "," << colID2 << std::endl;
+                    label = this->part_2_labelTable->get(colID2, r);
+                    std::cout << "Actual Matrix (label): " << label << std::endl;
+                    cache.add(label, new Panther::CacheEntry(r, colID2, new helib::Ctxt(ctxt)));
+                    std::cout << "Label:  " << label << " is successfully added to cache and recovered."
+                              << std::endl;
+                }
+
+
+            }
+        }
+    }
+    cache.print();
 }
+
 
 template
 class Panther::XCode<bool>;
