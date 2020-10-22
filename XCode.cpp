@@ -305,64 +305,63 @@ Panther::XCode<T>::recoverFromTwoColumnErasure(Panther::Encryptor &encryptor, st
             helib::Ctxt ctxt(*(encryptor.getPublicKey()));
             helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
             for (int c = 1; c < cols; ++c) { // now check each col for the same row
+
+                std::cout << "\n\n-----Part 1: For  row and column: " << r << "," << c << "------" << std::endl;
+                if (r == colID1 || r == colID2) // checking if one of the faulty one is parity
                 {
-                    std::cout << "\n\n-----Part 1: For  row and column: " << r << "," << c << "------" << std::endl;
-                    if (r == colID1 || r == colID2) // checking if one of the faulty one is parity
-                    {
-                        colIdx1 = mod(colID1 + c, cols);
+                    colIdx1 = mod(colID1 + c, cols);
 //                        std::cout << "colIdx1: " << colIdx1 << std::endl;
-                        if (r != colIdx1 && colIdx1 != colID1 &&
-                            colIdx1 != colID2) {     // skipping the parity and adding the good ones in ctxt
+                    if (r != colIdx1 && colIdx1 != colID1 &&
+                        colIdx1 != colID2) {     // skipping the parity and adding the good ones in ctxt
 //                            std::cout << "-----Starting Inserting for " << r << "," << c << "------" << std::endl;
-                            std::cout << "Inserted: " << r << "," << colIdx1 << "" << std::endl << std::endl;
+                        std::cout << "Inserted: " << r << "," << colIdx1 << "" << std::endl << std::endl;
 //                            encryptor.decryptAndPrint("ctxt_before", ctxt);
 //                            encryptor.decryptAndPrint("shardctxt", *(shards[colIdx1].getPart1Ctxt()));
-                            workingRowFlag = true;
-                            ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
+                        workingRowFlag = true;
+                        ctxt.addCtxt(*(shards[colIdx1].getPart1Ctxt()));
 //                            encryptor.decryptAndPrint("ctxt_after", ctxt);
-                        }
                     }
                 }
-                //adding all the good ones are done. Now apply bitmask and XOR!
-                //workingRowFlag so that masks are not added to other non working rows
-                if (workingRowFlag == true) {
-                    bitmask[r] = 1;
-                    std::cout << "bitmask: " << bitmask << std::endl;
-                    ctxt.multByConstant(bitmask);
+            }
+
+            //adding all the good ones are done. Now apply bitmask and XOR!
+            //workingRowFlag so that masks are not added to other non working rows
+            if (workingRowFlag == true) {
+                bitmask[r] = 1;
+                std::cout << "bitmask: " << bitmask << std::endl;
+                ctxt.multByConstant(bitmask);
 //                          encryptor.decryptAndPrint("ctxt_after_bitmask", ctxt);
-                    recoveredShard_part1.addCtxt(ctxt);
+                recoveredShard_part1.addCtxt(ctxt);
 //                            encryptor.decryptAndPrint("recoveredShard_part1_adding", recoveredShard_part1);
-                    if (r != colID1) {
-                        std::cout << "Recovering Part 1 Disk 1 " << std::endl;
-                        std::cout << "In Rotated Matrix: " << r << "," << colID1 << std::endl;
-                        label = this->part_1_labelTable->get(colID1, r);
-                        std::cout << "Actual Matrix (label): " << label << std::endl;
-                        cache.add(label, new Panther::CacheEntry(r, colID1, new helib::Ctxt(ctxt)));
-                        std::cout << "Label:  " << label << " is successfully added to cache and recovered."
-                                  << std::endl;
-                    }
-                    if (r != colID2) {
-                        std::cout << "Recovering Part 1 Disk 2 " << std::endl;
-                        std::cout << "In Rotated Matrix: " << r << "," << colID2 << std::endl;
-                        label = this->part_1_labelTable->get(colID2, r);
-                        std::cout << "Actual Matrix (label): " << label << std::endl;
-                        cache.add(label, new Panther::CacheEntry(r, colID2, new helib::Ctxt(ctxt)));
-                        std::cout << "Label:  " << label << " is successfully added to cache and recovered."
-                                  << std::endl;
-                    }
-
+                if (r != colID1) {
+                    std::cout << "Recovering Part 1 Disk 1 " << std::endl;
+                    std::cout << "In Rotated Matrix: " << r << "," << colID1 << std::endl;
+                    label = this->part_1_labelTable->get(colID1, r);
+                    std::cout << "Actual Matrix (label): " << label << std::endl;
+                    cache.add(label, new Panther::CacheEntry(r, colID1, new helib::Ctxt(ctxt)));
+                    std::cout << "Label:  " << label << " is successfully added to cache and recovered."
+                              << std::endl;
                 }
-
+                if (r != colID2) {
+                    std::cout << "Recovering Part 1 Disk 2 " << std::endl;
+                    std::cout << "In Rotated Matrix: " << r << "," << colID2 << std::endl;
+                    label = this->part_1_labelTable->get(colID2, r);
+                    std::cout << "Actual Matrix (label): " << label << std::endl;
+                    cache.add(label, new Panther::CacheEntry(r, colID2, new helib::Ctxt(ctxt)));
+                    std::cout << "Label:  " << label << " is successfully added to cache and recovered."
+                              << std::endl;
+                }
 
             }
-            cache.print();
 
-        } else {
-            //Caching goes here
+
         }
-
-
+        cache.print();
     }
+
+
+
+
 
     //part 2
     std::cout << "\n\n Recovering Part 2.....\n" << std::endl;
@@ -374,7 +373,6 @@ Panther::XCode<T>::recoverFromTwoColumnErasure(Panther::Encryptor &encryptor, st
             helib::Ctxt ctxt(*(encryptor.getPublicKey()));
             helib::Ptxt<helib::BGV> bitmask(*(encryptor.getContext()));
             for (int c = 1; c < cols; ++c) { // now check each col for the same row
-                {
                     std::cout << "\n\n-----Part 2: For  row and column: " << r << "," << c << "------" << std::endl;
                     if (r == colID1 || r == colID2) // checking if one of the faulty one is parity
                     {
@@ -391,7 +389,6 @@ Panther::XCode<T>::recoverFromTwoColumnErasure(Panther::Encryptor &encryptor, st
 //                            encryptor.decryptAndPrint("ctxt_after", ctxt);
                         }
                     }
-                }
             }
             //adding all the good ones are done. Now apply bitmask and XOR!
             //workingRowFlag so that masks are not added to other non working rows
@@ -427,6 +424,7 @@ Panther::XCode<T>::recoverFromTwoColumnErasure(Panther::Encryptor &encryptor, st
     }
     cache.print();
 }
+
 
 
 template
